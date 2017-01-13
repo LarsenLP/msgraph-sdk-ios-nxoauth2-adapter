@@ -55,6 +55,11 @@
 - (void)setClientId:(NSString*)clientId scopes:(NSArray*)scopes;
 
 /**
+ Set this auth provider to use the given KeychainServiceName for sharing Keychain between apps
+ */
+- (void)setKeychainServiceName:(NSString*)clientId;
+
+/**
  Obtains access token by performing login with UI, where viewController specifies the parent view controller.
  @param viewController The view controller to present the UI on.
  @param completionHandler The completion handler to be called when the authentication has completed.

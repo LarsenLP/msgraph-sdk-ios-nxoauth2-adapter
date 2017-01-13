@@ -127,6 +127,11 @@ typedef void (^AuthCompletion)(NSError *error);
     self.scopes = copiedArray;
 }
 
+- (void)setKeychainServiceName:(NSString*)keychainServiceName
+{
+    [[NXOAuth2AccountStore sharedStore] setKeychainServiceName:keychainServiceName];
+}
+
 - (void)loginWithViewController:(UIViewController*)viewController
                      completion:(void (^)(NSError *error))completionHandler
 {
@@ -148,48 +153,48 @@ typedef void (^AuthCompletion)(NSError *error);
                                      forAccountType:@"MSGraph"];
     
     [[NXOAuth2AccountStore sharedStore] requestAccessToAccountWithType:@"MSGraph" withPreparedAuthorizationURLHandler:^(NSURL *preparedURL)
-    {
-        [self.logger logWithLevel:MSLogLevelLogDebug message:@"Authentication URL : %@", preparedURL];
-        
-        // Get the view controller on the top of the stack
-        UIViewController *presentingViewController = [[viewController childViewControllers] firstObject];
-        // if the view controller's child is an ODAuthenticationViewController we just want to redirect to a new URL
-        // not push another view controller
-        if (presentingViewController && [presentingViewController isKindOfClass:[MSAuthenticationViewController class]]){
-            __block MSAuthenticationViewController *authViewController = (MSAuthenticationViewController *)presentingViewController;
-            [authViewController redirectWithStartURL:preparedURL
-                                              endURL:[NSURL URLWithString:self.redirectURL]
-                                             success:^(NSURL *endURL, NSError *error){
-                                                 [self authorizationFlowCompletedWithURL:endURL
-                                                                                   error:error
-                                                                presentingViewController:presentingViewController
-                                                                              completion:completionHandler];
-                                             }];
-        }
-        else {
-            __block MSAuthenticationViewController *authViewController =
-            [[MSAuthenticationViewController alloc] initWithStartURL:preparedURL
-                                                              endURL:[NSURL URLWithString:self.redirectURL]
-                                                             success:^(NSURL *endURL, NSError *error){
-                                                                 [self authorizationFlowCompletedWithURL:endURL
-                                                                                                   error:error
-                                                                                presentingViewController:authViewController
-                                                                                              completion:completionHandler];
-                                                                 
-                                                             }];
-            dispatch_async(dispatch_get_main_queue(), ^{
-                UINavigationController *navController = [[UINavigationController alloc] initWithRootViewController:authViewController];
-                navController.modalPresentationStyle = viewController.modalPresentationStyle;
-                UIViewController *viewControllerToPresentOn = viewController;
-                while (viewControllerToPresentOn.presentedViewController) {
-                    viewControllerToPresentOn = viewControllerToPresentOn.presentedViewController;
-                }
-                [viewControllerToPresentOn presentViewController:navController animated:YES  completion:^{
-                    [authViewController loadInitialRequest];
-                }];
-            });
-        }
-    }];
+     {
+         [self.logger logWithLevel:MSLogLevelLogDebug message:@"Authentication URL : %@", preparedURL];
+         
+         // Get the view controller on the top of the stack
+         UIViewController *presentingViewController = [[viewController childViewControllers] firstObject];
+         // if the view controller's child is an ODAuthenticationViewController we just want to redirect to a new URL
+         // not push another view controller
+         if (presentingViewController && [presentingViewController isKindOfClass:[MSAuthenticationViewController class]]){
+             __block MSAuthenticationViewController *authViewController = (MSAuthenticationViewController *)presentingViewController;
+             [authViewController redirectWithStartURL:preparedURL
+                                               endURL:[NSURL URLWithString:self.redirectURL]
+                                              success:^(NSURL *endURL, NSError *error){
+                                                  [self authorizationFlowCompletedWithURL:endURL
+                                                                                    error:error
+                                                                 presentingViewController:presentingViewController
+                                                                               completion:completionHandler];
+                                              }];
+         }
+         else {
+             __block MSAuthenticationViewController *authViewController =
+             [[MSAuthenticationViewController alloc] initWithStartURL:preparedURL
+                                                               endURL:[NSURL URLWithString:self.redirectURL]
+                                                              success:^(NSURL *endURL, NSError *error){
+                                                                  [self authorizationFlowCompletedWithURL:endURL
+                                                                                                    error:error
+                                                                                 presentingViewController:authViewController
+                                                                                               completion:completionHandler];
+                                                                  
+                                                              }];
+             dispatch_async(dispatch_get_main_queue(), ^{
+                 UINavigationController *navController = [[UINavigationController alloc] initWithRootViewController:authViewController];
+                 navController.modalPresentationStyle = viewController.modalPresentationStyle;
+                 UIViewController *viewControllerToPresentOn = viewController;
+                 while (viewControllerToPresentOn.presentedViewController) {
+                     viewControllerToPresentOn = viewControllerToPresentOn.presentedViewController;
+                 }
+                 [viewControllerToPresentOn presentViewController:navController animated:YES  completion:^{
+                     [authViewController loadInitialRequest];
+                 }];
+             });
+         }
+     }];
 }
 
 - (BOOL)loginSilent {
@@ -223,7 +228,7 @@ typedef void (^AuthCompletion)(NSError *error);
     [self setLastSuccessfulLoginIdentifier:nil];
     
     // Ideally we should make an async request to MS_AADV2_LOGOUT_URL, but that takes
-    //   a fair bit of 
+    //   a fair bit of
     for(NSHTTPCookie *cookie in [[NSHTTPCookieStorage sharedHTTPCookieStorage] cookies]) {
         if([cookie.domain hasSuffix:@"login.microsoftonline.com"] ||
            [cookie.domain hasSuffix:@".live.com"]) {
@@ -312,13 +317,13 @@ typedef void (^AuthCompletion)(NSError *error);
 
 #pragma mark - User preference
 - (void)setLastSuccessfulLoginIdentifier:(NSString *)identifier {
-    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    NSUserDefaults *userDefaults = [[NSUserDefaults alloc] initWithSuiteName:@"group.dk.consultia.cloudshare"];
     [userDefaults setObject:identifier forKey:lastIdentifierKey];
     [userDefaults synchronize];
 }
 
 - (NSString *)lastSuccessfulLoginIdentifier {
-    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    NSUserDefaults *userDefaults = [[NSUserDefaults alloc] initWithSuiteName:@"group.dk.consultia.cloudshare"];
     return [userDefaults objectForKey:lastIdentifierKey];
 }
 
