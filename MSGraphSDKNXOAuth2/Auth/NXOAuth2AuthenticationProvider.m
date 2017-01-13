@@ -130,9 +130,11 @@ typedef void (^AuthCompletion)(NSError *error);
 - (void)loginWithViewController:(UIViewController*)viewController
                      completion:(void (^)(NSError *error))completionHandler
 {
+#if !defined(NX_APP_EXTENSIONS)
     if (!viewController) {
         viewController = [[[[UIApplication sharedApplication] delegate] window] rootViewController];
     }
+#endif
     
     NSURL *tokenURL = [NSURL URLWithString:self.tokenURL];
     [[NXOAuth2AccountStore sharedStore] setClientID:self.clientId
